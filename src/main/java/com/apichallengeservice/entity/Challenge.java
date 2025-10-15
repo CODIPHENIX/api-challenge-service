@@ -33,7 +33,7 @@ public class Challenge {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
+    
     @Column(length = 100)
     private String title;
 
