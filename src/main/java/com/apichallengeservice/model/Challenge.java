@@ -1,9 +1,11 @@
-package com.apichallengeservice.entity;
+package com.apichallengeservice.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+import com.apichallengeservice.enums.ChallengeCategory;
+import com.apichallengeservice.enums.ChallengeDifficulty;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 

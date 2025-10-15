@@ -1,4 +1,4 @@
-package com.apichallengeservice.entity;
+package com.apichallengeservice.model;
 import org.springframework.data.annotation.Id;
 
 import jakarta.persistence.Column;

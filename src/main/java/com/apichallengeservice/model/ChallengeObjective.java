@@ -1,4 +1,5 @@
-package com.apichallengeservice.entity;
+package com.apichallengeservice.model;
+import com.apichallengeservice.enums.ObjectiveType;
 import lombok.Data;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

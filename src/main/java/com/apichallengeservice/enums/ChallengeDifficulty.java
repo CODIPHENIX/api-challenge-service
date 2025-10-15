@@ -1,4 +1,4 @@
-package com.apichallengeservice.entity;
+package com.apichallengeservice.enums;
 
 public enum ChallengeDifficulty {
 	BEGINNER, 
