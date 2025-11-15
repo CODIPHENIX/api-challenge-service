@@ -1,5 +1,6 @@
 package com.apichallengeservice.model;
 import com.apichallengeservice.enums.ObjectiveType;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,10 +13,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "challenge_objectives")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ChallengeObjective {
 
     @Id
@@ -30,7 +34,7 @@ public class ChallengeObjective {
     @Column(nullable = false)
     private ObjectiveType objectiveType;
 
-    @org.antlr.v4.runtime.misc.NotNull
+    @Column(nullable = false)
     private Double targetValue;
 
     @Column(length = 10)
