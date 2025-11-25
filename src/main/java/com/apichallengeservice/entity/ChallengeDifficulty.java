@@ -6,3 +6,4 @@ public enum ChallengeDifficulty {
 	ADVANCED,
 	EXPERT
 }
+

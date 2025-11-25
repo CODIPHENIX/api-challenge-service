@@ -1,0 +1,18 @@
+{
+  "groups": [
+    {
+      "name": "user.service",
+      "type": "com.apichallengeservice.config.UserServiceProperties",
+      "sourceType": "com.apichallengeservice.config.UserServiceProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "user.service.url",
+      "type": "java.lang.String",
+      "sourceType": "com.apichallengeservice.config.UserServiceProperties",
+      "description": "Base URL for the user service"
+    }
+  ]
+}
+
