@@ -1,83 +1,130 @@
 package com.apichallengeservice.service;
 
+import com.apichallengeservice.dto.*;
 import com.apichallengeservice.dto.client.UserProfileDTO;
 import com.apichallengeservice.entity.Challenge;
-import com.apichallengeservice.entity.ChallengeCategory;
-import com.apichallengeservice.entity.ChallengeDifficulty;
+import com.apichallengeservice.exception.BadRequestException;
+import com.apichallengeservice.exception.ResourceNotFoundException;
+import com.apichallengeservice.mapper.*;
 import com.apichallengeservice.repository.ChallengeRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.List;
 
 @Service
 public class ChallengeService {
     private final ChallengeRepository challengeRepository;
     private final UserServiceClient userServiceClient;
 
-    public ChallengeService(ChallengeRepository challengeRepository, UserServiceClient userServiceClient) {
+    private final ChallengeObjectiveService objectiveService;
+    private final ChallengeRuleService ruleService;
+    private final ChallengeRewardService rewardService;
+
+    public ChallengeService(ChallengeRepository challengeRepository, UserServiceClient userServiceClient,
+            ChallengeObjectiveService objectiveService, ChallengeRuleService ruleService,
+            ChallengeRewardService rewardService) {
         this.challengeRepository = challengeRepository;
         this.userServiceClient = userServiceClient;
+        this.objectiveService = objectiveService;
+        this.ruleService = ruleService;
+        this.rewardService = rewardService;
     }
 
-    public Challenge createChallenge(Challenge challenge) {
+    public ChallengeDTO createChallenge(ChallengeCreateDTO dto) {
 
-        boolean userExists = userServiceClient
-                .getUserById(challenge.getCreatorUserId())
+        boolean exists = userServiceClient
+                .getUserById(dto.getCreatorUserId())
                 .isPresent();
 
-        if (!userExists) {
-            throw new RuntimeException("Creator user does not exist");
+        if (!exists) {
+            throw new BadRequestException("Creator user does not exist");
         }
 
-        return challengeRepository.save(challenge);
+        Challenge challenge = ChallengeMapper.toEntityFromCreate(dto);
+
+        Challenge saved = challengeRepository.save(challenge);
+
+        return toCompleteDTO(saved);
     }
 
-    public Challenge getChallengeById(Long id) {
-        return challengeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Challenge not found"));
+    public ChallengeDTO getChallengeById(Long id) {
+        Challenge challenge = challengeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Challenge not found"));
+
+        return toCompleteDTO(challenge);
     }
 
-    public Page<Challenge> getAllChallenges(Pageable pageable) {
-        return challengeRepository.findAll(pageable);
+    public Page<ChallengeDTO> getAllChallenges(Pageable pageable) {
+        return challengeRepository.findAll(pageable)
+                .map(this::toCompleteDTO);
     }
 
-    public Challenge updateChallenge(Long id, Challenge updated) {
-        Challenge challenge = getChallengeById(id);
+    public ChallengeDTO updateChallenge(Long id, ChallengeUpdateDTO dto) {
 
-        challenge.setTitle(updated.getTitle());
-        challenge.setDescription(updated.getDescription());
-        challenge.setCategory(updated.getCategory());
-        challenge.setDifficulty(updated.getDifficulty());
-        challenge.setStartDate(updated.getStartDate());
-        challenge.setEndDate(updated.getEndDate());
-        challenge.setIsActive(updated.getIsActive());
+        Challenge existing = challengeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Challenge not found"));
 
-        return challengeRepository.save(challenge);
+        ChallengeMapper.updateEntityFromDTO(dto, existing);
+
+        Challenge saved = challengeRepository.save(existing);
+
+        return toCompleteDTO(saved);
     }
 
     public void deleteChallenge(Long id) {
-        Challenge challenge = getChallengeById(id);
+        Challenge challenge = challengeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Challenge not found with id : " + id));
+
         challengeRepository.delete(challenge);
     }
 
-    public Page<Challenge> getActive(Pageable pageable) {
-        return challengeRepository.findByIsActiveTrue(pageable);
+    public Page<ChallengeDTO> getActive(Pageable pageable) {
+        return challengeRepository.findByIsActiveTrue(pageable)
+                .map(this::toCompleteDTO);
     }
 
-    public Page<Challenge> getByCategory(String category, Pageable pageable) {
+    public Page<ChallengeDTO> getByCategory(String category, Pageable pageable) {
         return challengeRepository.findByCategory(
-                Enum.valueOf(ChallengeCategory.class, category), pageable);
+                Enum.valueOf(com.apichallengeservice.entity.ChallengeCategory.class, category),
+                pageable).map(this::toCompleteDTO);
     }
 
-    public Page<Challenge> getByDifficulty(String difficulty, Pageable pageable) {
+    public Page<ChallengeDTO> getByDifficulty(String diff, Pageable pageable) {
         return challengeRepository.findByDifficulty(
-                Enum.valueOf(ChallengeDifficulty.class, difficulty), pageable);
+                Enum.valueOf(com.apichallengeservice.entity.ChallengeDifficulty.class, diff),
+                pageable).map(this::toCompleteDTO);
     }
 
-    public Page<Challenge> getByCreator(Long creatorId, Pageable pageable) {
-        return challengeRepository.findByCreatorUserId(creatorId, pageable);
+    public Page<ChallengeDTO> getByCreator(Long userId, Pageable pageable) {
+        return challengeRepository.findByCreatorUserId(userId, pageable)
+                .map(this::toCompleteDTO);
+    }
+
+    private ChallengeDTO toCompleteDTO(Challenge challenge) {
+
+        UserProfileDTO profile = userServiceClient
+                .getUserProfileById(challenge.getCreatorUserId())
+                .orElse(null);
+
+        List<ObjectiveDTO> objectives = objectiveService.getObjectives(challenge.getId());
+
+        List<RuleDTO> rules = ruleService.getRules(challenge.getId());
+
+        RewardDTO reward = null;
+        try {
+            reward = rewardService.getReward(challenge.getId());
+        } catch (Exception ignored) {
+        }
+
+        return ChallengeMapper.toDTO(
+                challenge,
+                profile,
+                objectives,
+                rules,
+                reward);
     }
 
     public Optional<UserProfileDTO> getCreatorProfile(Long userId) {

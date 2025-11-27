@@ -1,14 +1,12 @@
 package com.apichallengeservice.controller;
 
-import com.apichallengeservice.entity.ChallengeObjective;
+import com.apichallengeservice.dto.ObjectiveCreateDTO;
+import com.apichallengeservice.dto.ObjectiveDTO;
+import com.apichallengeservice.dto.ObjectiveUpdateDTO;
 import com.apichallengeservice.service.ChallengeObjectiveService;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
-
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -20,24 +18,27 @@ public class ChallengeObjectiveController {
     }
 
     @PostMapping("/challenges/{challengeId}/objectives")
-    public  ChallengeObjective addObjective(
-        @PathVariable Long challengeId,
-        @RequestBody ChallengeObjective objective
-    ) {
-        return objectiveService.addObjective(challengeId, objective);
+    public ObjectiveDTO addObjective(
+            @PathVariable Long challengeId,
+            @RequestBody ObjectiveCreateDTO dto) {
+        return objectiveService.addObjective(challengeId, dto);
     }
-    
-    @GetMapping("challenges/{challengeId}/objectives")
-    public ChallengeObjective updateObjective(
-        @PathVariable Long id,
-        @RequestBody ChallengeObjective updated
-    ) {
-        return objectiveService.updateObjective(id, updated);
+
+    @GetMapping("/challenges/{challengeId}/objectives")
+    public List<ObjectiveDTO> getObjectives(@PathVariable Long challengeId) {
+        return objectiveService.getObjectives(challengeId);
+    }
+
+    @PutMapping("/objectives/{id}")
+    public ObjectiveDTO updateObjective(
+            @PathVariable Long id,
+            @RequestBody ObjectiveUpdateDTO dto) {
+        return objectiveService.updateObjective(id, dto);
     }
 
     @DeleteMapping("/objectives/{id}")
     public void deleteObjective(@PathVariable Long id) {
         objectiveService.deleteObjective(id);
     }
-    
+
 }

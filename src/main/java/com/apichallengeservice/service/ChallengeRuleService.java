@@ -1,49 +1,64 @@
 package com.apichallengeservice.service;
 
-import org.springframework.stereotype.Service;
-
+import com.apichallengeservice.dto.RuleCreateDTO;
+import com.apichallengeservice.dto.RuleDTO;
+import com.apichallengeservice.dto.RuleUpdateDTO;
 import com.apichallengeservice.entity.Challenge;
 import com.apichallengeservice.entity.ChallengeRule;
+import com.apichallengeservice.mapper.RuleMapper;
+import com.apichallengeservice.exception.ResourceNotFoundException;
 import com.apichallengeservice.repository.ChallengeRepository;
 import com.apichallengeservice.repository.ChallengeRuleRepository;
-import java.util.List;
+import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ChallengeRuleService {
 
-    private final ChallengeRuleRepository ruleRepository;
-    private final ChallengeRepository challengeRepository;
+    private final ChallengeRuleRepository repo;
+    private final ChallengeRepository challengeRepo;
 
-    public ChallengeRuleService(ChallengeRuleRepository ruleRepository,
-                                ChallengeRepository challengeRepository) {
-        this.ruleRepository = ruleRepository;
-        this.challengeRepository = challengeRepository;
+    public ChallengeRuleService(ChallengeRuleRepository repo, ChallengeRepository challengeRepo) {
+        this.repo = repo;
+        this.challengeRepo = challengeRepo;
     }
 
-    public ChallengeRule addRule(Long challengeId, ChallengeRule rule) {
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new RuntimeException("Challenge not found"));
+    public RuleDTO addRule(Long challengeId, RuleCreateDTO dto) {
 
+        Challenge challenge = challengeRepo.findById(challengeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Challenge not found"));
+
+        ChallengeRule rule = RuleMapper.fromCreateDTO(dto);
         rule.setChallenge(challenge);
-        return ruleRepository.save(rule);
+
+        ChallengeRule saved = repo.save(rule);
+
+        return RuleMapper.toDTO(saved);
     }
 
-    public List<ChallengeRule> getRules(Long challengeId) {
-        return ruleRepository.findByChallengeIdOrderByOrderIndexAsc(challengeId);
+    public List<RuleDTO> getRules(Long challengeId) {
+        return repo.findByChallengeIdOrderByOrderIndexAsc(challengeId)
+                .stream()
+                .map(RuleMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public ChallengeRule updateRule(Long id, ChallengeRule updated) {
-        ChallengeRule rule = ruleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rule not found"));
+    public RuleDTO updateRule(Long id, RuleUpdateDTO dto) {
+        ChallengeRule rule = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rule not found"));
 
-        rule.setRuleDescription(updated.getRuleDescription());
-        rule.setOrderIndex(updated.getOrderIndex());
+        RuleMapper.updateEntity(rule, dto);
 
-        return ruleRepository.save(rule);
+        return RuleMapper.toDTO(repo.save(rule));
     }
 
     public void deleteRule(Long id) {
-        ruleRepository.deleteById(id);
+        boolean exists = repo.existsById(id);
+        if (!exists) {
+            throw new ResourceNotFoundException("Rule not found with id : " + id);
+        }
+        repo.deleteById(id);
     }
 }

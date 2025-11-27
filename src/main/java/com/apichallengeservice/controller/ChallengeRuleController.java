@@ -2,6 +2,11 @@ package com.apichallengeservice.controller;
 
 import com.apichallengeservice.entity.ChallengeRule;
 import com.apichallengeservice.service.ChallengeRuleService;
+import com.apichallengeservice.dto.RuleCreateDTO;
+import com.apichallengeservice.dto.RewardUpdateDTO;
+import com.apichallengeservice.dto.RuleDTO;
+import com.apichallengeservice.dto.RuleUpdateDTO;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,24 +19,24 @@ public class ChallengeRuleController {
     }
 
     @PostMapping("/challenges/{challengeId}/rules")
-    public ChallengeRule addRule(
+    public RuleDTO addRule(
         @PathVariable Long challengeId,
-        @RequestBody ChallengeRule rule
+        @RequestBody RuleCreateDTO dto
     ) {
-        return ruleService.addRule(challengeId, rule);
+        return ruleService.addRule(challengeId, dto);
     }
 
     @GetMapping("/challenges/{challengeId}/rules")
-    public List<ChallengeRule> getRules(@PathVariable Long challengeId) {
+    public List<RuleDTO> getRules(@PathVariable Long challengeId) {
         return ruleService.getRules(challengeId);
     }
 
     @PutMapping("/rules/{id}")
-    public ChallengeRule updatRule(
+    public RuleDTO updatRule(
         @PathVariable Long id,
-        @RequestBody ChallengeRule updated
+        @RequestBody RuleUpdateDTO dto
     ) {
-        return ruleService.updateRule(id, updated);
+        return ruleService.updateRule(id, dto);
     }
 
     @DeleteMapping("/rules/{id}")

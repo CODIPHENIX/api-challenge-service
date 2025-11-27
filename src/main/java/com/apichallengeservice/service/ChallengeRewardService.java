@@ -1,56 +1,70 @@
 package com.apichallengeservice.service;
 
-import org.springframework.stereotype.Service;
-
+import com.apichallengeservice.dto.RewardCreateDTO;
+import com.apichallengeservice.dto.RewardDTO;
+import com.apichallengeservice.dto.RewardUpdateDTO;
 import com.apichallengeservice.entity.Challenge;
 import com.apichallengeservice.entity.ChallengeReward;
-import com.apichallengeservice.repository.ChallengeRewardRepository;
+import com.apichallengeservice.mapper.RewardMapper;
+import com.apichallengeservice.exception.BadRequestException;
+import com.apichallengeservice.exception.ResourceNotFoundException;
 import com.apichallengeservice.repository.ChallengeRepository;
-
-
+import com.apichallengeservice.repository.ChallengeRewardRepository;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ChallengeRewardService {
 
-    private final ChallengeRewardRepository rewardRepository;
-    private final ChallengeRepository challengeRepository;
+    private final ChallengeRewardRepository repo;
+    private final ChallengeRepository challengeRepo;
     private final UserServiceClient userServiceClient;
 
-    public ChallengeRewardService(ChallengeRewardRepository rewardRepository,
-                                  ChallengeRepository challengeRepository,
+    public ChallengeRewardService(ChallengeRewardRepository repo,
+                                  ChallengeRepository challengeRepo,
                                   UserServiceClient userServiceClient) {
-        this.rewardRepository = rewardRepository;
-        this.challengeRepository = challengeRepository;
+        this.repo = repo;
+        this.challengeRepo = challengeRepo;
         this.userServiceClient = userServiceClient;
     }
 
-    public ChallengeReward setReward(Long challengeId, ChallengeReward reward) {
+    public RewardDTO setReward(Long challengeId, RewardCreateDTO dto) {
 
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new RuntimeException("Challenge not found"));
+        Challenge challenge = challengeRepo.findById(challengeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Challenge not found"));
 
-        if (reward.getBadgeId() != null &&
-            userServiceClient.getUserById(reward.getBadgeId()).isEmpty()) {
-            throw new RuntimeException("Badge does not exist in User Service");
+        // Vérification badge (si fourni)
+        if (dto.getBadgeId() != null
+                && userServiceClient.getUserById(dto.getBadgeId()).isEmpty()) {
+            throw new BadRequestException("Badge does not exist in User Service");
         }
 
+        ChallengeReward reward = RewardMapper.fromCreateDTO(dto);
         reward.setChallenge(challenge);
-        return rewardRepository.save(reward);
+
+        ChallengeReward saved = repo.save(reward);
+
+        return RewardMapper.toDTO(saved);
     }
 
-    public ChallengeReward getReward(Long challengeId) {
-        return rewardRepository.findByChallengeId(challengeId)
-                .orElseThrow(() -> new RuntimeException("Reward not found"));
+    public RewardDTO getReward(Long challengeId) {
+
+        ChallengeReward reward = repo.findByChallengeId(challengeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reward not found"));
+
+        return RewardMapper.toDTO(reward);
     }
 
-    public ChallengeReward updateReward(Long id, ChallengeReward updated) {
-        ChallengeReward reward = rewardRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reward not found"));
-
-        reward.setPoints(updated.getPoints());
-        reward.setBadgeId(updated.getBadgeId());
-        reward.setDescription(updated.getDescription());
-
-        return rewardRepository.save(reward);
+    public RewardDTO updateReward(Long id, RewardUpdateDTO dto) {
+        ChallengeReward reward = repo.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Reward not found with id : " + id)
+                );
+        // Vérifier badge si jamis il est fourni
+        if (dto.getBadgeId() != null &&
+                userServiceClient.getUserById(dto.getBadgeId()).isEmpty()) {
+            throw new BadRequestException("Badge does not exist in User Service with id : " + dto.getBadgeId());
+        }
+        RewardMapper.updateEntity(reward, dto);
+        return RewardMapper.toDTO(repo.save(reward));
     }
 }

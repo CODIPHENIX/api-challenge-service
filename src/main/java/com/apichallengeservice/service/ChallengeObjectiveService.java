@@ -1,50 +1,65 @@
 package com.apichallengeservice.service;
 
+import com.apichallengeservice.dto.ObjectiveCreateDTO;
+import com.apichallengeservice.dto.ObjectiveDTO;
+import com.apichallengeservice.dto.ObjectiveUpdateDTO;
 import com.apichallengeservice.entity.Challenge;
 import com.apichallengeservice.entity.ChallengeObjective;
+import com.apichallengeservice.exception.ResourceNotFoundException;
+import com.apichallengeservice.mapper.ObjectiveMapper;
 import com.apichallengeservice.repository.ChallengeObjectiveRepository;
 import com.apichallengeservice.repository.ChallengeRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ChallengeObjectiveService {
-    private final ChallengeObjectiveRepository objectiveRepository;
-    private final ChallengeRepository challengeRepository;
 
-    public ChallengeObjectiveService(ChallengeObjectiveRepository objectiveRepository,
-                                     ChallengeRepository challengeRepository) {
-        this.objectiveRepository = objectiveRepository;
-        this.challengeRepository = challengeRepository;
+    private final ChallengeObjectiveRepository repo;
+    private final ChallengeRepository challengeRepo;
+
+    public ChallengeObjectiveService(ChallengeObjectiveRepository repo,
+                                     ChallengeRepository challengeRepo) {
+        this.repo = repo;
+        this.challengeRepo = challengeRepo;
     }
 
-    public ChallengeObjective addObjective(Long challengeId, ChallengeObjective objective) {
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new RuntimeException("Challenge not found"));
+    public ObjectiveDTO addObjective(Long challengeId, ObjectiveCreateDTO dto) {
 
-        objective.setChallenge(challenge);
-        return objectiveRepository.save(objective);
+        Challenge challenge = challengeRepo.findById(challengeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Challenge not found"));
+
+        ChallengeObjective entity = ObjectiveMapper.fromCreateDTO(dto);
+        entity.setChallenge(challenge);
+
+        ChallengeObjective saved = repo.save(entity);
+
+        return ObjectiveMapper.toDTO(saved);
     }
 
-    public List<ChallengeObjective> getObjectives(Long challengeId) {
-        return objectiveRepository.findByChallengeId(challengeId);
+    public List<ObjectiveDTO> getObjectives(Long challengeId) {
+        return repo.findByChallengeId(challengeId)
+                .stream()
+                .map(ObjectiveMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public ChallengeObjective updateObjective(Long id, ChallengeObjective updated) {
-        ChallengeObjective obj = objectiveRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Objective not found"));
+    public ObjectiveDTO updateObjective(Long id, ObjectiveUpdateDTO dto) {
+        ChallengeObjective obj = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Objective not found"));
 
-        obj.setObjectiveType(updated.getObjectiveType());
-        obj.setTargetValue(updated.getTargetValue());
-        obj.setUnit(updated.getUnit());
+        ObjectiveMapper.toEntity(obj, dto);
 
-        return objectiveRepository.save(obj);
+        return ObjectiveMapper.toDTO(repo.save(obj));
     }
 
     public void deleteObjective(Long id) {
-        objectiveRepository.deleteById(id);
+        boolean exists = repo.existsById(id);
+        if (!exists) {
+            throw new ResourceNotFoundException("Objective not found with id : " + id);
+        }
+        repo.deleteById(id);
     }
-
-    
 }
