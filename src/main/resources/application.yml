@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: ApiChallengeService
+
+  config:
+    import: optional:file:.env[.properties]
+
+  mvc:
+    servlet:
+      path: "/api"
+
+  datasource:
+    url: ${MYSQL_URL}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASSNAME}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+server:
+  port: ${APP_PORT}

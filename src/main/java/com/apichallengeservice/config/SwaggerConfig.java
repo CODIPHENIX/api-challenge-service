@@ -52,7 +52,8 @@ public class SwaggerConfig {
     private List<Server> getServers() {
         return List.of(
                 new Server()
-                        .url("http://localhost:" + serverPort + contextPath)
+                     //   .url("http://localhost:" + serverPort + contextPath)
+                        .url("http://localhost:" + serverPort + "/api")
                         .description("Development server")
         );
     }

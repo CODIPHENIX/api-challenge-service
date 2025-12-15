@@ -6,7 +6,7 @@ import java.util.Set;
 
 import com.apichallengeservice.enums.ChallengeCategory;
 import com.apichallengeservice.enums.ChallengeDifficulty;
-import org.antlr.v4.runtime.misc.NotNull;
+import lombok.Builder;
 import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.CascadeType;
@@ -29,6 +29,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Challenge {
 
     @Id
@@ -43,14 +44,11 @@ public class Challenge {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @NotNull
     private ChallengeCategory category;
 
     @Enumerated(EnumType.STRING)
-    @NotNull
     private ChallengeDifficulty difficulty;
 
-    @NotNull
     @Column(name = "creator_user_id")
     private Long creatorUserId; // Référence Groupe 1
 
